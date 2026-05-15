@@ -1,0 +1,42 @@
+---
+# Entry-point task list. Splits into 5 stages with tags so operators can
+# re-run a single stage without the whole role (e.g. --tags verify after a
+# manual debug fix).
+
+- name: Validate required variables are set
+  ansible.builtin.assert:
+    that:
+      - echoshield_kit_local_path | length > 0
+      - echoshield_api_url | length > 0
+      - claim_code is defined
+      - claim_code | length > 0
+    fail_msg: >-
+      ansible-echoshield requires echoshield_kit_local_path, echoshield_api_url,
+      and a per-host claim_code variable. Check your inventory + group_vars.
+  tags: always
+
+- name: Prerequisites (apt deps, NTP sync, time skew check)
+  ansible.builtin.import_tasks: prereq.yml
+  tags:
+    - prereq
+
+- name: Upload + extract kit
+  ansible.builtin.import_tasks: copy_kit.yml
+  when: not echoshield_kit_already_present
+  tags:
+    - kit
+
+- name: Install .debs + claim license seat
+  ansible.builtin.import_tasks: claim.yml
+  tags:
+    - install
+
+- name: Verify enrollment + finalize
+  ansible.builtin.import_tasks: verify.yml
+  tags:
+    - verify
+
+- name: Collect device-ID + service state for inventory tracking
+  ansible.builtin.import_tasks: inspection.yml
+  tags:
+    - inspection

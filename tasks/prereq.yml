@@ -1,0 +1,33 @@
+---
+- name: Ensure NTP sync is requested
+  ansible.builtin.command:
+    cmd: timedatectl set-ntp true
+  changed_when: false  # timedatectl is idempotent; no need to report change
+
+- name: Wait up to 60s for NTP sync (claim payload rejects skew > 300 s)
+  ansible.builtin.shell: |
+    set -e
+    for i in $(seq 1 12); do
+      if timedatectl show -p NTPSynchronized --value | grep -q yes; then exit 0; fi
+      sleep 5
+    done
+    exit 1
+  changed_when: false
+  failed_when: false
+  register: _ntp_sync
+  # Some Pis (custom golden images, no internet at boot) will never sync; the
+  # claim step itself will fail with a clearer error than this loop.
+
+- name: Warn when NTP sync did not complete
+  ansible.builtin.debug:
+    msg: >-
+      WARNING: NTP not synced after 60 s. Claim may fail with HTTP 4xx if the
+      Pi clock skew exceeds 300 s. Check `timedatectl status` and either
+      enable internet briefly or set the RTC manually before re-running.
+  when: _ntp_sync.rc != 0
+
+- name: Ensure apt-cache is fresh
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 600
+  when: not (echoshield_kit_already_present | bool)

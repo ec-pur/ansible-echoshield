@@ -1,0 +1,37 @@
+---
+- name: Idempotency check — is the Pi already enrolled?
+  ansible.builtin.shell: |
+    set -e
+    if [ -f /etc/echoshield/echoshield.toml ] \
+       && grep -qE '^token = "[^"]+"' /etc/echoshield/echoshield.toml; then
+      echo "ENROLLED"
+    else
+      echo "NOT_ENROLLED"
+    fi
+  register: _enrollment_state
+  changed_when: false
+
+- name: Run install-pi.sh + claim license seat
+  ansible.builtin.command:
+    cmd: >
+      bash {{ echoshield_kit_remote_path }}/install-pi.sh
+      --claim-code={{ claim_code | quote }}
+      --api={{ echoshield_api_url | quote }}
+      {% if echoshield_magic_token | length > 0 %}--token={{ echoshield_magic_token | quote }}{% endif %}
+      {% if not (echoshield_with_fingerprint | bool) %}--no-fingerprint{% endif %}
+    creates: /etc/echoshield/echoshield.toml
+  environment:
+    INSTALL_PHASE: "install_and_claim"
+    ECHOSHIELD_WITH_WEB: "{{ '1' if echoshield_with_web else '0' }}"
+    ECHOSHIELD_WITH_BASTION: "{{ '1' if echoshield_with_bastion else '0' }}"
+    ECHOSHIELD_FORCE: "{{ '1' if echoshield_force_os_check else '0' }}"
+    NO_COLOR: "1"  # plain ansible logs render better without ANSI escapes
+  when: _enrollment_state.stdout == "NOT_ENROLLED"
+  # The `creates:` guard is a second idempotency layer in case the Pi was
+  # half-enrolled (TOML written but no [license].token line yet) — install-pi.sh
+  # itself short-circuits on the same sentinel.
+
+- name: Report when this Pi was skipped (already enrolled)
+  ansible.builtin.debug:
+    msg: "Pi already enrolled — skipping install + claim phase."
+  when: _enrollment_state.stdout == "ENROLLED"

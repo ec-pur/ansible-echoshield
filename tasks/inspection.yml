@@ -1,0 +1,22 @@
+---
+- name: Read device-ID
+  ansible.builtin.slurp:
+    src: /var/lib/echoshield/device-id
+  register: _device_id_b64
+  failed_when: false
+
+- name: Extract local LAN IP for the on-Pi UI
+  ansible.builtin.command:
+    cmd: hostname -I
+  register: _local_ip
+  changed_when: false
+
+- name: Per-host summary
+  ansible.builtin.debug:
+    msg:
+      - "Device ID:  {{ (_device_id_b64.content | b64decode | trim) if _device_id_b64.content is defined else '(unavailable)' }}"
+      - "Hostname:   {{ inventory_hostname }}"
+      - "Local IP:   {{ _local_ip.stdout.split() | first | default('(unavailable)') }}"
+      - "Local UI:   http://{{ _local_ip.stdout.split() | first | default('127.0.0.1') }}:8443"
+      - "Logs:       journalctl -u echoshield-agent --since '5 min ago'"
+      - "Internet:   no longer required (airgap)"

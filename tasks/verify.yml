@@ -1,0 +1,24 @@
+---
+- name: Wait for [license].token to appear in /etc/echoshield/echoshield.toml
+  ansible.builtin.command:
+    cmd: bash {{ echoshield_kit_remote_path }}/install-pi.sh
+  environment:
+    INSTALL_PHASE: "verify_enrollment"
+    ECHOSHIELD_POLL_TRIES: "{{ echoshield_verify_tries }}"
+    ECHOSHIELD_POLL_INTERVAL: "{{ echoshield_verify_interval }}"
+    NO_COLOR: "1"
+  changed_when: false
+
+- name: Confirm echoshield-agent service is enabled + active
+  ansible.builtin.systemd:
+    name: echoshield-agent.service
+    enabled: true
+    state: started
+  changed_when: false
+
+- name: Confirm fpv-detector service is enabled + active
+  ansible.builtin.systemd:
+    name: fpv-detector.service
+    enabled: true
+    state: started
+  changed_when: false

@@ -1,0 +1,40 @@
+---
+# Path on the control host to the unpacked Deployment Kit. MUST contain:
+#   manifest.json + .minisig, echoshield.pub, packages/echoshield-*.deb,
+#   install-pi.sh, install-common.sh.
+echoshield_kit_local_path: ""
+
+# Where the kit is materialised on each Pi. Path is owned by the role
+# (cleaned on uninstall). Kept under /var/cache because RaspiOS auto-purges
+# this tree on `apt-get clean` if disk pressure hits.
+echoshield_kit_remote_path: "/var/cache/echoshield/kit"
+
+# Fleet backend base URL the install-pi.sh claim step posts to. Required.
+echoshield_api_url: ""
+
+# Magic token from the operator's install URL. Empty allowed for direct-issue
+# flows that pre-seed device tokens.
+echoshield_magic_token: ""
+
+# When ON (default), the claim is bound to SHA-256(Pi serial) + SHA-256(LibreSDR
+# serial) per Phase H7. Turn OFF only if the device is genuinely not on its
+# final hardware yet (debug, lab bring-up).
+echoshield_with_fingerprint: true
+
+# Optional .debs from the kit:
+echoshield_with_web: true       # echoshield-web (local UI on :8443)
+echoshield_with_bastion: false  # echoshield-bastion (operator reverse-SSH)
+
+# Skip kit upload when the Pi already has the kit (golden-image pre-stage,
+# or a previous incomplete role run). Saves ~50 MB transfer per Pi.
+echoshield_kit_already_present: false
+
+# Pass ECHOSHIELD_FORCE=1 to install-pi.sh — lets the role install onto
+# non-Bookworm / non-arm64 hosts (debug). NEVER enable on customer fleet.
+echoshield_force_os_check: false
+
+# Timeout for the verify_enrollment poll on each Pi. install-pi.sh defaults
+# to 60 tries × 5 s = 5 min; raise for slow hardware or first-boot on cold
+# Pi where systemd dependency resolution can stretch.
+echoshield_verify_tries: 60
+echoshield_verify_interval: 5

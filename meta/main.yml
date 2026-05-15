@@ -1,0 +1,26 @@
+---
+galaxy_info:
+  role_name: ansible_echoshield
+  namespace: ec_pur
+  author: Echoshield Operations
+  description: >-
+    Bulk deploy Echoshield FPV-drone detector firmware onto a Raspberry Pi 5
+    fleet from a BYO Deployment Kit. One run per Pi installs the four+ .deb
+    packages, claims a license seat from the operator-issued pool, and
+    transitions the Pi into airgap operation.
+  license: Apache-2.0
+  min_ansible_version: "2.16"
+  platforms:
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
+  galaxy_tags:
+    - echoshield
+    - fpv
+    - drone-detection
+    - raspberry-pi
+    - sdr
+    - mavlink
+    - airgap
+dependencies: []

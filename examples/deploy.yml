@@ -1,0 +1,31 @@
+---
+# Example playbook — drop this next to your inventory file and run:
+#   ansible-playbook -i inventory.ini deploy.yml
+#
+# Required environment variable: ECHOSHIELD_MAGIC_TOKEN (from the operator's
+# install URL). Per-host claim_code is read from the inventory.
+
+- name: Deploy Echoshield BYO airgap fleet
+  hosts: echoshield_fleet
+  become: true
+  gather_facts: true
+  vars:
+    echoshield_kit_local_path: "{{ playbook_dir }}/echoshield-kit"
+    echoshield_api_url: "https://164-92-233-43.nip.io"
+    echoshield_magic_token: "{{ lookup('env', 'ECHOSHIELD_MAGIC_TOKEN') }}"
+    echoshield_with_fingerprint: true
+    echoshield_with_web: true
+    echoshield_with_bastion: false
+
+  pre_tasks:
+    - name: Sanity check — claim_code is set per host
+      ansible.builtin.assert:
+        that:
+          - claim_code is defined
+          - claim_code | length >= 22
+        fail_msg: >-
+          Each host MUST have a `claim_code=<code>` inventory var. See
+          examples/inventory.ini for the format.
+
+  roles:
+    - role: ansible-echoshield

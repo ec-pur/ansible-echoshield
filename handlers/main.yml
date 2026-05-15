@@ -1,0 +1,10 @@
+---
+- name: Restart echoshield-agent
+  ansible.builtin.systemd:
+    name: echoshield-agent.service
+    state: restarted
+
+- name: Restart fpv-detector
+  ansible.builtin.systemd:
+    name: fpv-detector.service
+    state: restarted

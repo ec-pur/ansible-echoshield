@@ -1,0 +1,34 @@
+---
+- name: Ensure remote kit dir exists
+  ansible.builtin.file:
+    path: "{{ echoshield_kit_remote_path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Upload Deployment Kit (synchronize for resume-friendly transfer)
+  ansible.posix.synchronize:
+    src: "{{ echoshield_kit_local_path }}/"
+    dest: "{{ echoshield_kit_remote_path }}/"
+    rsync_opts:
+      - "--delete"
+      - "--chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r"
+  delegate_to: localhost
+  become: false
+  # synchronize is safer than copy: 50 MB kit + 100 Pis = 5 GB if `copy` re-uploads
+  # every run. synchronize hashes both sides and only ships deltas. For sites
+  # without rsync, switch the role to `ansible.builtin.copy` via a tag override.
+
+- name: Ensure install-pi.sh is executable on the Pi
+  ansible.builtin.file:
+    path: "{{ echoshield_kit_remote_path }}/install-pi.sh"
+    mode: "0755"
+    owner: root
+    group: root
+
+- name: Confirm install-common.sh is present
+  ansible.builtin.stat:
+    path: "{{ echoshield_kit_remote_path }}/install-common.sh"
+  register: _common_stat
+  failed_when: not _common_stat.stat.exists
