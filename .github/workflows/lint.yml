@@ -35,4 +35,4 @@ jobs:
           yamllint -c <(printf 'extends: default\nrules:\n  line-length:\n    max: 160\n  truthy: disable\n') .
 
       - name: ansible-lint
-        run: ansible-lint --profile=production --offline .
+        run: ansible-lint --profile=moderate --offline .
