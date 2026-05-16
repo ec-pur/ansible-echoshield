@@ -1,0 +1,38 @@
+name: lint
+
+# Phase H Track D — gate ansible-lint + yamllint on every change to the
+# public Echoshield Ansible role. ansible-lint runs in production profile
+# so the role meets Galaxy-grade quality before customers consume it.
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ansible-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install ansible-lint + yamllint
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible-lint yamllint
+
+      - name: yamllint
+        run: yamllint -d "{extends: default, rules: {line-length: {max: 160}, truthy: disable}}" .
+
+      - name: ansible-lint
+        run: ansible-lint --profile=production --offline .
