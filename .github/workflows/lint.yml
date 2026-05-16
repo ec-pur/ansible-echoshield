@@ -1,6 +1,6 @@
 name: lint
 
-# Phase H Track D — gate ansible-lint + yamllint on every change to the
+# Phase H Track D - gate ansible-lint + yamllint on every change to the
 # public Echoshield Ansible role. ansible-lint runs in production profile
 # so the role meets Galaxy-grade quality before customers consume it.
 
@@ -32,7 +32,8 @@ jobs:
           pip install ansible-lint yamllint
 
       - name: yamllint
-        run: yamllint -d "{extends: default, rules: {line-length: {max: 160}, truthy: disable}}" .
+        run: |
+          yamllint -c <(printf 'extends: default\nrules:\n  line-length:\n    max: 160\n  truthy: disable\n') .
 
       - name: ansible-lint
         run: ansible-lint --profile=production --offline .
