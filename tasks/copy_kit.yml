@@ -7,18 +7,24 @@
     group: root
     mode: "0755"
 
-- name: Upload Deployment Kit (synchronize for resume-friendly transfer)
-  ansible.posix.synchronize:
+- name: Upload Deployment Kit
+  ansible.builtin.copy:
     src: "{{ echoshield_kit_local_path }}/"
     dest: "{{ echoshield_kit_remote_path }}/"
-    rsync_opts:
-      - "--delete"
-      - "--chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r"
-  delegate_to: localhost
-  become: false
-  # synchronize is safer than copy: 50 MB kit + 100 Pis = 5 GB if `copy` re-uploads
-  # every run. synchronize hashes both sides and only ships deltas. For sites
-  # without rsync, switch the role to `ansible.builtin.copy` via a tag override.
+    owner: root
+    group: root
+    directory_mode: "0755"
+    mode: "0644"
+  # v0.1: full copy per run (~50 MB upload per Pi at install time is acceptable
+  # for the BYO flow — install is a one-shot operation, not a recurring sync).
+  # Prior implementation used ansible.posix.synchronize with become: false, but
+  # rsync ran as the unprivileged user against a root-owned dest dir created by
+  # the preceding file task and failed with Permission denied. Wrapping rsync
+  # via --rsync-path="sudo rsync" provoked "sudo: unrecognized option
+  # --server" because sudo claimed the server flag. Switching to copy is the
+  # simplest correct fix. v0.2 may restore incremental delta transfer via a
+  # role-shipped rsync_wrapper.sh once the BYO install scale (>10 Pis per
+  # operator run) makes the bandwidth saving worth the wrapper complexity.
 
 - name: Ensure install-pi.sh is executable on the Pi
   ansible.builtin.file:
